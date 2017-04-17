@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Bryan Kahler"]
   spec.email         = ["Bryan.Kahler@autodesk.com"]
 
-  spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
+  spec.summary       = 'Oauth token generator'
+  spec.description   = 'A command line tool to generate oauth tokens for a given key/secret.'
   spec.homepage      = "TODO: Put your gem's website or public repo URL here."
   spec.license       = "MIT"
 
@@ -26,6 +26,9 @@ Gem::Specification.new do |spec|
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
+
+  spec.add_dependency 'thor'
+  spec.add_dependency 'rest-client'
 
   spec.add_development_dependency "bundler", "~> 1.9"
   spec.add_development_dependency "rake", "~> 10.0"
