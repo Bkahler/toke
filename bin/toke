@@ -2,4 +2,4 @@
 
 require 'toke'
 
-Toke::HammerOfTheGods.start( ARGV )
+Toke::CLI.start( ARGV )

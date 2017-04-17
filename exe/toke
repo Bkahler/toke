@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require 'toke'
+Toke::CLI.start(ARGV)

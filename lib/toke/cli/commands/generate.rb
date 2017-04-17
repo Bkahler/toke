@@ -1,7 +1,6 @@
-require 'thor'
 
 module Toke
-  class HammerOfTheGods < Thor
+  class CLI < Thor
 
     VERSION_FORMATS = {
       'xml' => 'v1',

@@ -1,6 +1,5 @@
 require "toke/version"
-require "toke/cli"
+require "toke/cli/cli"
 
 module Toke
-  # Your code goes here...
 end
