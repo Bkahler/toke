@@ -1,4 +1,3 @@
-
 module Toke
   class CLI < Thor
 
@@ -7,34 +6,57 @@ module Toke
       'json' => 'v2',
     }
 
-    desc "generate", "generate an apigee access token"
+    desc "gen", "generate an apigee access token"
     method_option :env, aliases: "-e", required: true, desc: "The target environment [dev|stg|prd]."
-    method_option :secret, aliases: "-s", required: true, desc: "Your client secret"
-    method_option :client_id, aliases: "-i", required: true, desc: "Your client Id"
-    method_option :callback, aliases: "-c", default: '', desc: "Oauth endpoint to hit (defaults to JSON) [xml|json]"
+    method_option :secret, aliases: "-s", desc: "Your client secret"
+    method_option :client_id, aliases: "-i", desc: "Your client Id"
+    method_option :callback, aliases: "-c", default: '', desc: "Oauth callback"
+    method_option :url, aliases: "-u", desc: "Oauth endpoint to hit "
     method_option :format, aliases: "-f", default: 'json', desc: "Oauth endpoint to hit (defaults to JSON) [xml|json]"
     method_option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose logging (prints the oauth server response)"
 
-    def generate
+    def gen
       @env           = options[:env].downcase
-      @client_id     = options[:client_id] || configuration[:apigee_client_id]
-      @client_secret = options[:secret]    || configuration[:apigee_client_secret]
+      @client_id     = options[:client_id] || configuration.dig(@env, 'client_id')
+      @client_secret = options[:secret]    || configuration.dig(@env, 'client_secret')
+      @url           = options[:url]       || configuration.dig(@env, 'url')
+      @callback      = options[:callback]  || configuration.dig(@env, 'callback')
       @version       = VERSION_FORMATS.fetch(options[:format], 'v2')
       puts "Retrieving Token"
+      validate_config
       retrieve_token
     end
 
     private
 
-    def retrieve_token
-      url = oauth_url(@env)
-      callback = options[:callback]
-      time = Time.now.to_i.to_s
-      inner = callback + @client_id + time.to_s
+    def validate_config
+      unless @client_id
+        abort("No client_id, use set to update configuration or pass as argument")
+      end
 
+      unless @client_secret
+        abort("No client_secret, use set to update configuration or pass as argument")
+      end
+
+      unless @url
+        abort("No url, use set to update configuration or pass as argument")
+      end
+    end
+
+    def configuration
+      if File.exists?("#{ENV['HOME']}/.toke")
+        JSON.parse(Base64.decode64(File.read("#{ENV['HOME']}/.toke")))
+      else
+        {}
+      end
+    end
+
+    def retrieve_token
+      time = Time.now.to_i.to_s
+      inner = @callback + @client_id + time.to_s
 
       key = @client_secret
-      data = callback + @client_id + time
+      data = @callback + @client_id + time
       ssign = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
       basicEncode = Base64.strict_encode64(@client_id + ':' + @client_secret).strip()
 
@@ -46,7 +68,7 @@ module Toke
 
       resp = RestClient::Request.execute(
         :method => :post,
-        :url => url,
+        :url => @url,
         :headers => headers
       )
 
@@ -59,18 +81,6 @@ module Toke
       puts "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
       puts "Access Token:\n#{access_token}"
       puts "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
-    end
-
-    def oauth_url(env)
-      case env.to_s
-      when 'dev'
-        "https://enterprise-api-dev.autodesk.com/#{@version}/oauth/generateaccesstoken?grant_type=client_credentials"
-      when 'stg'
-        "https://enterprise-api-stg.autodesk.com/#{@version}/oauth/generateaccesstoken?grant_type=client_credentials"
-      when 'prd'
-        "https://enterprise-api.autodesk.com/#{@version}/oauth/generateaccesstoken?grant_type=client_credentials"
-      else
-      end
     end
 
     def parse_response(body)
